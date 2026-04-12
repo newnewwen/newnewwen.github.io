@@ -181,10 +181,14 @@
 		<nav id="navbar-main" class="navbar navbar-main navbar-expand-lg navbar-transparent navbar-light bg-primary headroom--not-bottom headroom--not-top headroom--pinned">
 			<div class="container">
 				
+					<a class="navbar-brand navbar-icon mr-lg-5" href="">
+						<img src="/assets/img/dinglan.jpg">
+					</a>
+				
 				<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar_global" aria-controls="navbar_global" aria-expanded="false" aria-label="Toggle navigation">
 					<span class="navbar-toggler-icon"></span>
 				</button>
-				<a class="navbar-brand" href="/">Hexo</a>
+				<a class="navbar-brand" href="/">Blog</a>
 				<div class="navbar-collapse collapse" id="navbar_global">
 					<div class="navbar-collapse-header">
 						<div class="row">
@@ -241,6 +245,10 @@
 						</li>
 					</ul>
 				</div>
+				
+					<a class="navbar-brand navbar-icon-mobile" href="">
+						<img src="/assets/img/dinglan.jpg">
+					</a>
 				
 				<div id="navbar_menu_mask" data-toggle="collapse" data-target="#navbar_global"></div>
 			</div>
@@ -500,7 +508,7 @@
 						
 						<div class="tab-pane fade text-center" id="leftbar_tab_overview" role="tabpanel" aria-labelledby="leftbar_tab_overview_btn">
 							<img id="leftbar_overview_author_image" src="/assets/img/auther.jpg" class="img-fluid rounded-circle shadow-sm" style="width: 100px;" alt="avatar">
-							<h6 id="leftbar_overview_author_name">Hexo</h6>
+							<h6 id="leftbar_overview_author_name">Wen</h6>
 							<nav class="site-state">
 								<div class="site-state-item site-state-posts">
 									<a href="/archives">
@@ -818,3 +826,511 @@
 
 </html>
 
+<!-- 特效控制按钮 + 选择面板（最终修复版：粒子/樱花均可正常开关） -->
+<style>
+    /* 面板样式（同上，保持不变） */
+    .effect-panel {
+        position: fixed;
+        bottom: 80px;
+        right: 20px;
+        width: 280px;
+        background: rgba(30, 30, 40, 0.95);
+        backdrop-filter: blur(12px);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        z-index: 10000;
+        transform: translateY(20px) scale(0.95);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        pointer-events: none;
+        border: 1px solid rgba(255,255,255,0.2);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+    .effect-panel.active {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+    .effect-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        color: white;
+        font-weight: bold;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        padding-bottom: 8px;
+    }
+    .close-panel-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 0 8px;
+        line-height: 1;
+        transition: transform 0.2s;
+    }
+    .close-panel-btn:hover { transform: scale(1.1); color: #ff6b6b; }
+    .effect-section {
+        margin-bottom: 20px;
+    }
+    .effect-section h4 {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        color: rgba(255,255,255,0.9);
+        letter-spacing: 1px;
+    }
+    .effect-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+    }
+    .effect-buttons button {
+        background: rgba(255,255,255,0.15);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 20px;
+        color: white;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s;
+        backdrop-filter: blur(4px);
+    }
+    .effect-buttons button:hover {
+        background: rgba(255,255,255,0.3);
+        transform: translateY(-2px);
+    }
+    .effect-buttons button.active {
+        background: #5e72e4;
+        box-shadow: 0 0 8px rgba(94,114,228,0.5);
+    }
+    #effect-toggle {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        vertical-align: middle !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    #effect-toggle .btn-inner--icon {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+        font-size: 1rem !important;
+    }
+</style>
+
+<script>
+(function() {
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            var darkmodeBtn = document.getElementById('fabtn_toggle_darkmode');
+            if (!darkmodeBtn) return;
+            var buttonContainer = darkmodeBtn.parentNode;
+
+            var getThemeColor = function() {
+                var color = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim();
+                return color || '#5e72e4';
+            };
+
+            var effectBtn = document.createElement('button');
+            effectBtn.id = 'effect-toggle';
+            effectBtn.className = 'btn btn-icon btn-neutral fabtn shadow-sm';
+            effectBtn.type = 'button';
+            effectBtn.setAttribute('title', '特效工坊');
+            var span = document.createElement('span');
+            span.className = 'btn-inner--icon';
+            var i = document.createElement('i');
+            i.className = 'fa fa-magic';
+            span.appendChild(i);
+            effectBtn.appendChild(span);
+            buttonContainer.appendChild(effectBtn);
+
+            if (typeof $ !== 'undefined' && $.fn.tooltip) {
+                $('[data-toggle="tooltip"]').tooltip();
+            }
+
+            // ========= 特效管理器（最终修复版） =========
+            var currentBgEffect = localStorage.getItem('dynamicBgState') || null;
+            var currentCursorEffect = localStorage.getItem('mouseEffectState') || null;
+            if (currentBgEffect === 'off') currentBgEffect = null;
+            if (currentCursorEffect === 'off') currentCursorEffect = null;
+
+            var sakuraScriptLoaded = false;
+
+            // ----- 背景特效清理（终极版）-----
+            function clearBgEffect() {
+                // 1. 移除所有非樱花/非烟花的 canvas 元素（粒子特效的 canvas 没有特定 id）
+                var canvases = document.querySelectorAll('canvas');
+                canvases.forEach(function(c) {
+                    // 保留樱花 canvas 和烟花 canvas（它们由各自的管理函数负责清理）
+                    if (c.id !== 'canvas_sakura' && c.id !== 'fireworks-canvas') {
+                        c.remove();
+                    }
+                });
+                // 2. 调用 canvas-nest 的 destroy 方法（如果存在）
+                if (window.cnCanvas && typeof window.cnCanvas.destroy === 'function') {
+                    window.cnCanvas.destroy();
+                    window.cnCanvas = null;
+                }
+                // 3. 额外：移除可能残留的 canvas-nest 样式标签
+                var nestStyle = document.getElementById('canvas-nest-style');
+                if (nestStyle) nestStyle.remove();
+                // 4. 清理樱花特效
+                if (window.stopp && document.getElementById('canvas_sakura')) {
+                    window.stopp();
+                }
+                var sakuraCanvas = document.getElementById('canvas_sakura');
+                if (sakuraCanvas) sakuraCanvas.remove();
+                sakuraScriptLoaded = false;
+            }
+
+            // 加载粒子背景（canvas-nest）
+            function loadParticles() {
+                return new Promise(function(resolve, reject) {
+                    clearBgEffect(); // 先彻底清除旧特效
+                    var script = document.createElement('script');
+                    script.setAttribute('data-bg', 'particles');
+                    script.src = '/assets/js/canvas-nest.min.js';
+                    script.onload = function() {
+                        // 等待 canvas-nest 完全初始化（它会在 window 上挂载 cnCanvas）
+                        setTimeout(function() {
+                            resolve();
+                        }, 150);
+                    };
+                    script.onerror = function() {
+                        console.error('粒子背景本地失败，使用 CDN');
+                        var fallback = document.createElement('script');
+                        fallback.setAttribute('data-bg', 'particles');
+                        fallback.src = 'https://cdn.jsdelivr.net/npm/canvas-nest.js@2.0.4/dist/canvas-nest.min.js';
+                        fallback.onload = function() {
+                            setTimeout(function() { resolve(); }, 150);
+                        };
+                        fallback.onerror = function() { reject(); };
+                        document.head.appendChild(fallback);
+                    };
+                    document.head.appendChild(script);
+                });
+            }
+
+            // 加载樱花特效
+            function loadSakura() {
+                return new Promise(function(resolve, reject) {
+                    if (sakuraScriptLoaded) {
+                        // 脚本已加载，如果 canvas 不存在则重新启动
+                        if (!document.getElementById('canvas_sakura')) {
+                            if (window.stopp) {
+                                window.stopp();  // 切换开关（如果关闭则开启）
+                                resolve();
+                            } else {
+                                reject('stopp 未定义');
+                            }
+                        } else {
+                            resolve();
+                        }
+                        return;
+                    }
+                    var script = document.createElement('script');
+                    script.setAttribute('data-bg', 'sakura');
+                    script.src = '/assets/js/sakura.min.js';
+                    script.onload = function() {
+                        setTimeout(function() {
+                            sakuraScriptLoaded = true;
+                            // 确保樱花特效已启动（脚本通常会自动启动）
+                            if (!document.getElementById('canvas_sakura') && window.startSakura) {
+                                window.startSakura();
+                            }
+                            resolve();
+                        }, 200);
+                    };
+                    script.onerror = function() {
+                        console.error('樱花本地失败，使用 CDN');
+                        var fallback = document.createElement('script');
+                        fallback.setAttribute('data-bg', 'sakura');
+                        fallback.src = 'https://raw.githubusercontent.com/hitokoto-osc/sakura.js/master/dist/sakura.min.js';
+                        fallback.onload = function() {
+                            setTimeout(function() {
+                                sakuraScriptLoaded = true;
+                                if (!document.getElementById('canvas_sakura') && window.startSakura) {
+                                    window.startSakura();
+                                }
+                                resolve();
+                            }, 200);
+                        };
+                        fallback.onerror = function() { reject(); };
+                        document.head.appendChild(fallback);
+                    };
+                    document.head.appendChild(script);
+                });
+            }
+
+            function loadBgEffect(type) {
+                clearBgEffect();
+                if (!type || type === 'off') {
+                    currentBgEffect = null;
+                    localStorage.setItem('dynamicBgState', 'off');
+                    return;
+                }
+                if (type === 'particles') {
+                    loadParticles().catch(function(err) {
+                        console.error('粒子特效加载失败', err);
+                    });
+                    currentBgEffect = 'particles';
+                    localStorage.setItem('dynamicBgState', 'particles');
+                } else if (type === 'sakura') {
+                    loadSakura().catch(function(err) {
+                        console.error('樱花特效加载失败', err);
+                    });
+                    currentBgEffect = 'sakura';
+                    localStorage.setItem('dynamicBgState', 'sakura');
+                }
+            }
+
+            // ----- 鼠标特效（与之前相同，略）-----
+            var heartClickListener = null;
+            var fireworksClickListener = null;
+
+            function clearCursorEffect() {
+                if (heartClickListener) {
+                    document.removeEventListener('click', heartClickListener);
+                    heartClickListener = null;
+                }
+                var hearts = document.querySelectorAll('.heart');
+                hearts.forEach(function(h) { h.remove(); });
+                if (fireworksClickListener) {
+                    document.removeEventListener('click', fireworksClickListener);
+                    fireworksClickListener = null;
+                }
+                var fireCanvas = document.querySelector('#fireworks-canvas');
+                if (fireCanvas) fireCanvas.remove();
+            }
+
+            function createHeart(e) {
+                var heart = document.createElement('div');
+                heart.className = 'heart';
+                var color = 'rgb(' + ~~(255 * Math.random()) + ',' + ~~(255 * Math.random()) + ',' + ~~(255 * Math.random()) + ')';
+                heart.style.cssText = `
+                    position: fixed;
+                    left: ${e.clientX - 5}px;
+                    top: ${e.clientY - 5}px;
+                    width: 10px;
+                    height: 10px;
+                    background: ${color};
+                    transform: rotate(45deg);
+                    z-index: 99999;
+                    opacity: 1;
+                    transition: all 0.8s ease-out;
+                    pointer-events: none;
+                `;
+                if (!document.getElementById('heart-style')) {
+                    var style = document.createElement('style');
+                    style.id = 'heart-style';
+                    style.textContent = `
+                        .heart:before, .heart:after {
+                            content: '';
+                            position: absolute;
+                            width: 10px;
+                            height: 10px;
+                            background: inherit;
+                            border-radius: 50%;
+                        }
+                        .heart:before { left: -5px; top: 0; }
+                        .heart:after { top: -5px; left: 0; }
+                    `;
+                    document.head.appendChild(style);
+                }
+                document.body.appendChild(heart);
+                var start = performance.now();
+                function animate(now) {
+                    var elapsed = now - start;
+                    var progress = Math.min(elapsed / 800, 1);
+                    var yOffset = progress * -100;
+                    var scale = 1 - progress * 0.8;
+                    var opacity = 1 - progress;
+                    heart.style.transform = `rotate(45deg) scale(${scale}) translateY(${yOffset}px)`;
+                    heart.style.opacity = opacity;
+                    if (progress < 1) requestAnimationFrame(animate);
+                    else heart.remove();
+                }
+                requestAnimationFrame(animate);
+            }
+
+            function startFirework(e) {
+                var x = e.clientX;
+                var y = e.clientY;
+                var colors = ['#ff595e', '#ffca3a', '#8ac926', '#1982c4', '#6a4c93'];
+                var particles = [];
+                var canvas = document.createElement('canvas');
+                canvas.id = 'fireworks-canvas';
+                canvas.style.position = 'fixed';
+                canvas.style.top = '0';
+                canvas.style.left = '0';
+                canvas.style.width = '100%';
+                canvas.style.height = '100%';
+                canvas.style.pointerEvents = 'none';
+                canvas.style.zIndex = '99998';
+                document.body.appendChild(canvas);
+                var ctx = canvas.getContext('2d');
+                var w = window.innerWidth;
+                var h = window.innerHeight;
+                canvas.width = w;
+                canvas.height = h;
+
+                var particleCount = 80;
+                for (var i = 0; i < particleCount; i++) {
+                    var angle = Math.random() * Math.PI * 2;
+                    var speed = Math.random() * 5 + 2;
+                    var vx = Math.cos(angle) * speed;
+                    var vy = Math.sin(angle) * speed;
+                    particles.push({
+                        x: x, y: y,
+                        vx: vx, vy: vy,
+                        life: 1.0,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        size: Math.random() * 4 + 2
+                    });
+                }
+
+                function draw() {
+                    ctx.clearRect(0, 0, w, h);
+                    var allDead = true;
+                    for (var i = 0; i < particles.length; i++) {
+                        var p = particles[i];
+                        if (p.life <= 0) continue;
+                        allDead = false;
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.2;
+                        p.life -= 0.02;
+                        ctx.globalAlpha = p.life;
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+                    }
+                    if (allDead) {
+                        cancelAnimationFrame(animFrame);
+                        canvas.remove();
+                        return;
+                    }
+                    animFrame = requestAnimationFrame(draw);
+                }
+                var animFrame = requestAnimationFrame(draw);
+                setTimeout(function() {
+                    if (canvas && canvas.parentNode) canvas.remove();
+                    cancelAnimationFrame(animFrame);
+                }, 5000);
+            }
+
+            function loadCursorEffect(type) {
+                clearCursorEffect();
+                if (!type || type === 'off') {
+                    currentCursorEffect = null;
+                    localStorage.setItem('mouseEffectState', 'off');
+                    return;
+                }
+                if (type === 'heart') {
+                    heartClickListener = function(e) { createHeart(e); };
+                    document.addEventListener('click', heartClickListener);
+                    currentCursorEffect = 'heart';
+                    localStorage.setItem('mouseEffectState', 'heart');
+                } else if (type === 'fireworks') {
+                    fireworksClickListener = function(e) { startFirework(e); };
+                    document.addEventListener('click', fireworksClickListener);
+                    currentCursorEffect = 'fireworks';
+                    localStorage.setItem('mouseEffectState', 'fireworks');
+                }
+            }
+
+            // 初始化已有特效
+            if (currentBgEffect) loadBgEffect(currentBgEffect);
+            if (currentCursorEffect) loadCursorEffect(currentCursorEffect);
+
+            function updateButtonStyle() {
+                effectBtn.style.color = (currentBgEffect || currentCursorEffect) ? getThemeColor() : '';
+            }
+            updateButtonStyle();
+
+            // ========= 特效选择面板 =========
+            var panelHtml = `
+                <div id="effect-panel" class="effect-panel">
+                    <div class="effect-panel-header">
+                        <span>✨ 特效工坊 ✨</span>
+                        <button id="close-effect-panel" class="close-panel-btn">×</button>
+                    </div>
+                    <div class="effect-panel-content">
+                        <div class="effect-section">
+                            <h4>🌸 背景特效</h4>
+                            <div class="effect-buttons">
+                                <button data-bg-effect="particles">粒子线条</button>
+                                <button data-bg-effect="sakura">樱花飘落</button>
+                                <button data-bg-effect="off">关闭背景</button>
+                            </div>
+                        </div>
+                        <div class="effect-section">
+                            <h4>🖱️ 鼠标特效</h4>
+                            <div class="effect-buttons">
+                                <button data-cursor-effect="heart">多彩爱心</button>
+                                <button data-cursor-effect="fireworks">烟花绽放</button>
+                                <button data-cursor-effect="off">关闭鼠标</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', panelHtml);
+            var panel = document.getElementById('effect-panel');
+            var closePanelBtn = document.getElementById('close-effect-panel');
+
+            function openPanel() { panel.classList.add('active'); }
+            function closePanel() { panel.classList.remove('active'); }
+
+            effectBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                openPanel();
+            });
+            if (closePanelBtn) closePanelBtn.addEventListener('click', closePanel);
+            document.addEventListener('click', function(e) {
+                if (panel && panel.classList.contains('active') && !panel.contains(e.target) && e.target !== effectBtn) {
+                    closePanel();
+                }
+            });
+
+            document.querySelectorAll('[data-bg-effect]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var effect = this.getAttribute('data-bg-effect');
+                    loadBgEffect(effect === 'off' ? null : effect);
+                    updateButtonStyle();
+                    closePanel();
+                    highlightActiveButtons();
+                });
+            });
+            document.querySelectorAll('[data-cursor-effect]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var effect = this.getAttribute('data-cursor-effect');
+                    loadCursorEffect(effect === 'off' ? null : effect);
+                    updateButtonStyle();
+                    closePanel();
+                    highlightActiveButtons();
+                });
+            });
+
+            function highlightActiveButtons() {
+                document.querySelectorAll('[data-bg-effect]').forEach(function(btn) {
+                    if (btn.getAttribute('data-bg-effect') === currentBgEffect) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+                document.querySelectorAll('[data-cursor-effect]').forEach(function(btn) {
+                    if (btn.getAttribute('data-cursor-effect') === currentCursorEffect) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                });
+            }
+            setTimeout(highlightActiveButtons, 500);
+        }, 500);
+    });
+})();
+</script>
